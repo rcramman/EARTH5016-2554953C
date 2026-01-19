@@ -8,8 +8,8 @@ xc = dx/2:dx:W-dx/2;    % coordinate vector for cell centre positions [m]
 xf = 0:dx:W;            % coordinate vectore for cell face positions [m]
 
 % set time step size
-dt_adv = (complete here using eq. (7));
-dt_dff = (complete here using eq. (8));
+dt_adv = (dx/2)/u0;
+dt_dff = ((dx/2)^2)/k0;
 dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 
 % set up ghosted index lists for boundary conditions
@@ -67,7 +67,7 @@ while t <= tend
 
     % get analytical solution at time t
     sgmt = sqrt(sgm0^2 + 2*k0t);
-    Ta   = T0 + dT*exp(-(xc-W/2    ).^2./(2*sgm0^2)) ...
+    Ta   = T0 + dT*exp(-(xc-W/2  ).^2./(2*sgm0^2)) ...
            T0 + dT*exp(-(xc-W/2-W).^2./(2*sgm0^2)) ...
            T0 + dT*exp(-(xc-W/2+W).^2./(2*sgm0^2));
 
