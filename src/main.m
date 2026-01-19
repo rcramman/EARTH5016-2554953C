@@ -129,10 +129,10 @@ function dfdt = diffusion(f,k,dx,ind)
 % dfdt: diffusion rate of scalar field f
 
 % calculate diffusive flux of scalar field f
-q = (complete here);
+q = - k0 * (diff(T))/dx;
 
 % calculate diffusion flux balance for rate of change
-dfdt = (complete here);
+dfdt = - diff(q)/dx;
 
 end
 
