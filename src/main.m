@@ -16,15 +16,15 @@ dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 switch BC
     case 'periodic'
         ind3 = [    N,1:N,1  ];  % 3-point stencil            |-- i-1 --|-- i --|-- i+1 --|
-        ind5 = [    N,2:N,2  ];  % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
+        ind5 = [    N,-1,:N,2  ];  % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
     case 'insulating'
         % example non-periodic indexing for N=4 
         ind3 = [   1,1:N,N   ];  % 3-point stencil            |-- i-1 --|-- i --|-- i+1 --|
-        ind5 = [   2,2:N,N   ];  % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
+        ind5 = [   1,2:N,N   ];  % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
 end
 
 % set initial condition for temperature at cell centres
-T   = zeros(size(xc)) + Tr;   % initialise T array at Tr
+T   = T0 + dT*exp(-(xc-W/2).^2./(2*sgm0^2));   % initialise T array at Tr
 Tin = T;                                         % store initial condition for plotting
 Ta  = T;                                         % initialise analytical solution
 
@@ -66,8 +66,10 @@ while t <= tend
     T = T + dTdt * dt;
 
     % get analytical solution at time t
-    sgmt = sqrt();
-    Ta   = ();
+    sgmt = sqrt(sgm0^2 + 2*k0t);
+    Ta   = T0 + dT*exp(-(xc-W/2    ).^2./(2*sgm0^2)) ...
+           T0 + dT*exp(-(xc-W/2-W).^2./(2*sgm0^2)) ...
+           T0 + dT*exp(-(xc-W/2+W).^2./(2*sgm0^2));
 
     % plot model progress
     if ~mod(k,nop)
