@@ -66,10 +66,10 @@ while t <= tend
     T = T + dTdt * dt;
 
     % get analytical solution at time t
-    sgmt = sqrt(sgm0^2 + 2*k0t);
-    Ta   = T0 + dT*exp(-(xc-W/2  ).^2./(2*sgm0^2)) ...
-           T0 + dT*exp(-(xc-W/2-W).^2./(2*sgm0^2)) ...
-           T0 + dT*exp(-(xc-W/2+W).^2./(2*sgm0^2));
+    sgmt = sqrt(sgm0^2 + 2*k*t);
+    Ta   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(2*sgm0^2)) ...
+           + dT*exp(-(xc-W/2-W-u0*t).^2./(2*sgm0^2)) ...
+           + dT*exp(-(xc-W/2+W-u0*t).^2./(2*sgm0^2));
 
     % plot model progress
     if ~mod(k,nop)
@@ -129,7 +129,7 @@ function dfdt = diffusion(f,k,dx,ind)
 % dfdt: diffusion rate of scalar field f
 
 % calculate diffusive flux of scalar field f
-q = - k0 * (diff(T))/dx;
+q = - k * (diff(f(ind)))/dx;
 
 % calculate diffusion flux balance for rate of change
 dfdt = - diff(q)/dx;
@@ -156,11 +156,11 @@ u_pos = max(0,u);    % positive velocity (to the right)
 u_neg = min(0,u);    % negative velocity (to the left)
 
 % get values on stencil nodes
-f_imm  = f(ind(5:end-4));  % i-2
-f_im   = f(ind(4:end-3));  % i-1
+f_imm  = f(ind(1:end-4));  % i-2
+f_im   = f(ind(2:end-3));  % i-1
 f_ic   = f(ind(3:end-2));  % i
-f_ip   = f(ind(2:end-1));  % i+1
-f_ipp  = f(ind(1:end));  % i+2
+f_ip   = f(ind(4:end-1));  % i+1
+f_ipp  = f(ind(5:end));  % i+2
 
 % get interpolated field values on i+1/2, i-1/2 cell faces
 switch ADVN
