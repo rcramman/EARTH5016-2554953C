@@ -81,7 +81,7 @@ end
 
 
 %*****  calculate and display numerical error norm
-Err = (complete here);
+Err = rms(T-Ta)/rms((Ta));
 
 disp(' ');
 disp(['Advection scheme: ',ADVN]);
