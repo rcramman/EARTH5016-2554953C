@@ -156,11 +156,11 @@ u_pos = max(0,u);    % positive velocity (to the right)
 u_neg = min(0,u);    % negative velocity (to the left)
 
 % get values on stencil nodes
-f_imm  = f(complete here);  % i-2
-f_im   = f(ind(2:end-1));  % i-1
+f_imm  = f(ind(5:end-4));  % i-2
+f_im   = f(ind(4:end-3));  % i-1
 f_ic   = f(ind(3:end-2));  % i
-f_ip   = f(complete here);  % i+1
-f_ipp  = f(complete here);  % i+2
+f_ip   = f(ind(2:end-1));  % i+1
+f_ipp  = f(ind(1:end));  % i+2
 
 % get interpolated field values on i+1/2, i-1/2 cell faces
 switch ADVN
