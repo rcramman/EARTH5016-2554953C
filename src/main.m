@@ -3,7 +3,7 @@
 
 %*****  Initialise Model Setup
 
-% create x-coordinate vectors
+% create coordinate vectors
 xc = h/2:h:W-h/2;    % coordinate vector for cell centre positions [m]
 zc = h/2:h:D-h/2;
 xf = 0:h:W;            % coordinate vectore for cell face positions [m]
@@ -18,11 +18,16 @@ dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 % set up ghosted index lists for boundary conditions
 switch BC
     case 'periodic'
-        ind3 = [      N,1:N,1    ];  % 3-point stencil            |-- i-1 --|-- i --|-- i+1 --|
-        ind5 = [  N-1,N,1:N,1,2 ];  % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
+        % example periodic indexing for N=4
+        % 3-point stencil |-- i-1 --|-- i --|-- i+1 --|
+        % 5-point stencil |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
+        ix3 = [ Nx,1:Nx,1 ];
+        ix5 = [Nx-1,Nx,1:Nx,1,2];
+        iz3 = [ Nz,1:Nz,1 ];
+    iz5 = [Nz-1,Nz,1:Nz,1,2];
     case 'insulating'
         % example non-periodic indexing for N=4 
-        ind3 = [   1,1:N,N   ];  % 3-point stencil            |-- i-1 --|-- i --|-- i+1 --|
+        ind3 = [   1,1:N,N       ];  % 3-point stencil            |-- i-1 --|-- i --|-- i+1 --|
         ind5 = [ 2,1,1:N,N,N-1   ];  % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
 end
 
