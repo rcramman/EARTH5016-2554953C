@@ -7,12 +7,12 @@
 xc = h/2:h:W-h/2;    % coordinate vector for cell centre positions [m]
 zc = h/2:h:D-h/2;
 xf = 0:h:W;            % coordinate vectore for cell face positions [m]
-zf = 0:h:D
-[Xc,Zc] = meshgrid(xc,zc)
+zf = 0:h:D;
+[Xc,Zc] = meshgrid(xc,zc);
 
 % set time step size
-dt_adv = (dx/2)/u0;
-dt_dff = ((dx/2)^2)/k0;
+dt_adv = (h/2)/(max(max(u(:)),masx(w(:)))+eps);
+dt_dff = ((h/2)^2)/(max(kT(:)./rho((:)./cp(:)))+eps);
 dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 
 % set up ghosted index lists for boundary conditions
@@ -31,8 +31,20 @@ switch BC
         ind5 = [ 2,1,1:N,N,N-1   ];  % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
 end
 
+% set initial coefficient fields
+kT = kT0 .* ones(Nz,Nx);
+cP = cP0 .* ones(Nz,Nx);
+rho = rho0 .* ones(Nz,Nx);
+Qr = Qr0 .* ones(Nz,Nx);
+
+% set initial velocity field
+w = w0 .* ones(Nz+1,Nx);
+u = u0 .* ones(Nz,Nx+1);
+
+% set initial temperature field
+T = 
+
 % set initial condition for temperature at cell centres
-T   = T0 + dT*exp(-(xc-W/2).^2./(2*sgm0^2));   % initialise T array at Tr
 Tin = T;                                         % store initial condition for plotting
 Ta  = T;                                         % initialise analytical solution
 
@@ -76,8 +88,16 @@ while t <= tend
     % get analytical solution at time t
     sgmt = sqrt(sgm0^2 + 2*k*t);
     Ta   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(2*sgm0^2)) ...
-           + dT*exp(-(xc-W/2-W-u0*t).^2./(2*sgm0^2)) ...
-           + dT*exp(-(xc-W/2+W-u0*t).^2./(2*sgm0^2));
+              + dT*exp(-(xc-W/2-W-u0*t).^2./(2*sgm0^2)) ...
+              + dT*exp(-(xc-W/2+W-u0*t).^2./(2*sgm0^2)) ...
+
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2))
+
 
     % plot model progress
     if ~mod(k,nop)
@@ -125,7 +145,7 @@ end
 
 %*****  Function to calculate diffusion rate
 
-function dfdt = diffusion(f,k,dx,ind)
+function dfdt = diffusion(f,k,h,iz,ix)
 
 % input arguments
 % f:    diffusing scalar field
@@ -136,11 +156,18 @@ function dfdt = diffusion(f,k,dx,ind)
 % output variables
 % dfdt: diffusion rate of scalar field f
 
+% calculate diffusive flux coefficient at cell faces
+kfz = (k(iz(1:end-1),:)+k(iz(2:end),:))/2;
+kfx = (k(:,ix(1:end-1))+k(:,ix(2:end)))/2;
+
 % calculate diffusive flux of scalar field f
-q = - k * (diff(f(ind)))/dx;
+qz = - kfz .* diff(f(iz,:),1,1)/h;
+qx = - kfx .* diff(f(:,ix),1,2)/h;
 
 % calculate diffusion flux balance for rate of change
-dfdt = - diff(q)/dx;
+dfdt = - diff(qz,1,1)/h ...
+- diff(qx,1,2)/h;
+
 
 end
 
