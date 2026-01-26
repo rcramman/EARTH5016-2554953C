@@ -12,12 +12,13 @@ zf = 0:h:D;
 
 % set time step size
 dt_adv = (h/2)/(max(max(u(:)),masx(w(:)))+eps);
-dt_dff = ((h/2)^2)/(max(kT(:)./rho((:)./cp(:)))+eps);
+dt_dff = (h/2)^2/(max(kT(:)./rho((:)./cP(:))+eps);
 dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 
 % set up ghosted index lists for boundary conditions
 switch BC
     case 'periodic'
+
         % example periodic indexing for N=4
         % 3-point stencil |-- i-1 --|-- i --|-- i+1 --|
         % 5-point stencil |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
@@ -42,7 +43,7 @@ w = w0 .* ones(Nz+1,Nx);
 u = u0 .* ones(Nz,Nx+1);
 
 % set initial temperature field
-T = 
+T = analytical(T0,dT,sgm0,kT0./rho0./cP0,u0,w0,Xc,Zc,D,W,t); % analytical solution in 2D
 
 % set initial condition for temperature at cell centres
 Tin = T;                                         % store initial condition for plotting
@@ -87,16 +88,16 @@ while t <= tend
 
     % get analytical solution at time t
     sgmt = sqrt(sgm0^2 + 2*k*t);
-    Ta   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(2*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-W-u0*t).^2./(2*sgm0^2)) ...
-              + dT*exp(-(xc-W/2+W-u0*t).^2./(2*sgm0^2)) ...
+    Ta   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) ...
+              + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) ...
 
-              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
-              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
-              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
-              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
-              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2)) ...
-              + dT*exp(-(zc-D/2+W-u0*t).^2./(2*sgm0^2))
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+W-u0*t).^2./(4*sgm0^2))
 
 
     % plot model progress
@@ -166,7 +167,7 @@ qx = - kfx .* diff(f(:,ix),1,2)/h;
 
 % calculate diffusion flux balance for rate of change
 dfdt = - diff(qz,1,1)/h ...
-- diff(qx,1,2)/h;
+       - diff(qx,1,2)/h;
 
 
 end
@@ -174,7 +175,7 @@ end
 
 %*****  Function to calculate advection rate
 
-function dfdt = advection(f,u,dx,ind,ADVN)
+function dfdt = advection(f,u,dx,iz,ix,ADVN)
 
 % input arguments
 % f:    advected scalar field
@@ -191,7 +192,7 @@ u_pos = max(0,u);    % positive velocity (to the right)
 u_neg = min(0,u);    % negative velocity (to the left)
 
 % get values on stencil nodes
-f_imm  = f(ind(1:end-4));  % i-2
+f_imm  = f(iz(1:end-4));  % i-2
 f_im   = f(ind(2:end-3));  % i-1
 f_ic   = f(ind(3:end-2));  % i
 f_ip   = f(ind(4:end-1));  % i+1
