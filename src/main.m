@@ -4,8 +4,11 @@
 %*****  Initialise Model Setup
 
 % create x-coordinate vectors
-xc = dx/2:dx:W-dx/2;    % coordinate vector for cell centre positions [m]
-xf = 0:dx:W;            % coordinate vectore for cell face positions [m]
+xc = h/2:h:W-h/2;    % coordinate vector for cell centre positions [m]
+zc = h/2:h:D-h/2;
+xf = 0:h:W;            % coordinate vectore for cell face positions [m]
+zf = 0:h:D
+[Xc,Zc] = meshgrid(xc,zc)
 
 % set time step size
 dt_adv = (dx/2)/u0;
