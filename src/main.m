@@ -11,8 +11,8 @@ zf = 0:h:D;
 [Xc,Zc] = meshgrid(xc,zc);
 
 % set time step size
-dt_adv = (h/2)/(max(max(u(:)),masx(w(:)))+eps);
-dt_dff = (h/2)^2/(max(kT(:)./rho((:)./cP(:))+eps);
+dt_adv = (h/2)/(max(abs(u(:)),max(w(:)))+eps);
+dt_dff = (h/2)^2/(max(kT(:)./rho(:)./cP(:))+eps);
 dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 
 % set up ghosted index lists for boundary conditions
@@ -42,12 +42,10 @@ Qr = Qr0 .* ones(Nz,Nx);
 w = w0 .* ones(Nz+1,Nx);
 u = u0 .* ones(Nz,Nx+1);
 
-% set initial temperature field
-T = analytical(T0,dT,sgm0,kT0./rho0./cP0,u0,w0,Xc,Zc,D,W,t); % analytical solution in 2D
-
 % set initial condition for temperature at cell centres
+T   = T0 + dT*exp(-(xc-W/2).^2./(2*sgm0^2));   % initialise T array at Tr
 Tin = T;                                         % store initial condition for plotting
-Ta  = T;                                         % initialise analytical solution
+Ta  = T; 
 
 % Initialise time count variables
 t = 0;  % initial time [s]
@@ -72,14 +70,17 @@ while t <= tend
             
             % get rate of change
             dTdt = diffusion(T,k0,dx,ind3) ...
-                 + advection(T,u0,dx,ind5,ADVN);
+                 + advection(T,u0,dx,ind5,ADVN) ...
+                 + Qr./(rho.*cP);
 
         case 'RK2'  % 2nd-order Runge-Kutta time integration scheme
             
             dTdt_half = diffusion(T               ,k0,dx,ind3) ...
-                      + advection(T               ,u0,dx,ind5,ADVN);
+                      + advection(T               ,u0,dx,ind5,ADVN) ...
+                      + Qr./(rho.*cP);
             dTdt      = diffusion(T+dTdt_half*dt/2,k0,dx,ind3) ...
-                      + advection(T+dTdt_half*dt/2,u0,dx,ind5,ADVN);
+                      + advection(T+dTdt_half*dt/2,u0,dx,ind5,ADVN) ...
+                      + Qr./(rho.*cP);
 
     end
 
