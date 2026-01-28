@@ -88,15 +88,13 @@ while t <= tend
 
     % get analytical solution at time t
     sgmt = sqrt(sgm0^2 + 2*k*t);
-    Ta   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2));
+    Ta   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) ...
+              + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) ...
+
+              + dT*exp(-(zc-D/2-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
+              + dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
 
 
 
@@ -162,11 +160,12 @@ kfz = (k(iz(1:end-1),:)+k(iz(2:end),:))/2;
 kfx = (k(:,ix(1:end-1))+k(:,ix(2:end)))/2;
 
 % calculate diffusive flux of scalar field f
-
+<<<<<<< HEAD
 qz = - kfz .* diff(f(iz,:),1,1)/h;
 qx = - kfx .* diff(f(:,ix),1,2)/h;
-
+=======
 q = - k * (diff(f(ind)))/dx;
+>>>>>>> origin/main
 
 % calculate diffusion flux balance for rate of change
 dfdt = - diff(qz,1,1)/h ...
@@ -195,8 +194,11 @@ u_pos = max(0,u);    % positive velocity (to the right)
 u_neg = min(0,u);    % negative velocity (to the left)
 
 % get values on stencil nodes
+<<<<<<< HEAD
 f_imm  = f(iz(1:end-4));  % i-2
+=======
 f_imm  = f(ind(1:end-4));  % i-2
+>>>>>>> origin/main
 f_im   = f(ind(2:end-3));  % i-1
 f_ic   = f(ind(3:end-2));  % i
 f_ip   = f(ind(4:end-1));  % i+1
