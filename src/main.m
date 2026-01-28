@@ -128,17 +128,17 @@ disp(' ');
 function makefig(x,T,Tin,Ta,t)
 
 subplot(2,1,1)
-plot(x,Tin,'k:',x,T,'r-',x,Ta,'k--','LineWidth',1.5); axis tight; box on;
+imagesc(x,z,T); axis equal tight; colorbar
 
-ylabel('T [C]','FontSize',15)
-title(['Temperature at time = ',num2str(t,4),' yr'],'FontSize',18)
+ylabel('z [m]','FontSize',15)
+title(['Temperature [C]; time = ',num2str(t),' [yr]'],'FontSize',17)
 
 subplot(2,1,2)
-plot(x,(T-Ta)./rms(Ta,'all'),'r-',x,0*Ta,'k-','LineWidth',1.5); axis tight; box on;
+imagesc(x,z,T-Ta); axis equal tight; colorbar
 
 xlabel('x [m]','FontSize',15)
-ylabel('E [1]','FontSize',15)
-title(['Numerical Error at time = ',num2str(t,4),' yr'],'FontSize',18)
+ylabel('z [m]','FontSize',15)
+title(['Num. Error [C]','FontSize',17)
 
 drawnow;
 
