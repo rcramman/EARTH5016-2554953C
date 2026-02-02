@@ -10,10 +10,6 @@ xf = 0:h:W;            % coordinate vectore for cell face positions [m]
 zf = 0:h:D;
 [Xc,Zc] = meshgrid(xc,zc);
 
-% set time step size
-dt_adv = (h/2)/(max(abs(u(:)),max(w(:)))+eps);
-dt_dff = (h/2)^2/(max(kT(:)./rho(:)./cP(:))+eps);
-dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 
 % set up ghosted index lists for boundary conditions
 switch BC
@@ -42,14 +38,27 @@ Qr = Qr0 .* ones(Nz,Nx);
 w = w0 .* ones(Nz+1,Nx);
 u = u0 .* ones(Nz,Nx+1);
 
-% set initial condition for temperature at cell centres
-T   = T0 + dT*exp(-(xc-W/2).^2./(2*sgm0^2));   % initialise T array at Tr
-Tin = T;                                         % store initial condition for plotting
-Ta  = T; 
-
 % Initialise time count variables
 t = 0;  % initial time [s]
 k = 0;  % initial time step count
+
+% set time step size
+dt_adv = (h/2)/(max(abs(u(:)),max(w(:)))+eps);
+dt_dff = (h/2)^2/(max(kT(:)./rho(:)./cP(:))+eps);
+dt     = CFL * min(dt_adv,dt_dff); % time step [s]
+
+% set initial condition for temperature at cell centres
+T   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t  ).^2./(4*sgm0^2)) ...
+         + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
+         + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
+         + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t  ).^2./(4*sgm0^2)) ...
+         + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
+         + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
+         + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t  ).^2./(4*sgm0^2)) ...
+         + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
+         + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2));
+Tin = T;                                         % store initial condition for plotting
+Ta  = T; 
 
 % initialise output figure with initial condition
 figure(1); clf
@@ -125,7 +134,7 @@ disp(' ');
 
 %*****  Function to make output figure
 
-function makefig(x,T,Tin,Ta,t)
+function makefig(x,T,Ta,t)
 
 subplot(2,1,1)
 imagesc(x,z,T); axis equal tight; colorbar
@@ -138,7 +147,7 @@ imagesc(x,z,T-Ta); axis equal tight; colorbar
 
 xlabel('x [m]','FontSize',15)
 ylabel('z [m]','FontSize',15)
-title(['Num. Error [C]','FontSize',17)
+title('Num. Error [C]','FontSize',17)
 
 drawnow;
 
@@ -167,7 +176,7 @@ kfx = (k(:,ix(1:end-1))+k(:,ix(2:end)))/2;
 qz = - kfz .* diff(f(iz,:),1,1)/h;
 qx = - kfx .* diff(f(:,ix),1,2)/h;
 
-q = - k * (diff(f(ind)))/dx;
+%q = - k * (diff(f(ind)))/dx;
 
 % calculate diffusion flux balance for rate of change
 dfdt = - diff(qz,1,1)/h ...
@@ -179,7 +188,7 @@ end
 
 %*****  Function to calculate advection rate
 
-function dfdt = advection(f,u,dx,iz,ix,ADVN)
+function dfdt = advection(f,u,iz,ix,ADVN)
 
 % input arguments
 % f:    advected scalar field
@@ -196,12 +205,18 @@ u_pos = max(0,u);    % positive velocity (to the right)
 u_neg = min(0,u);    % negative velocity (to the left)
 
 % get values on stencil nodes
+%f_imm  = f(iz(1:end-4),:);  % i-2
 f_imm  = f(iz(1:end-4));  % i-2
-f_imm  = f(ind(1:end-4));  % i-2
-f_im   = f(ind(2:end-3));  % i-1
-f_ic   = f(ind(3:end-2));  % i
-f_ip   = f(ind(4:end-1));  % i+1
-f_ipp  = f(ind(5:end));  % i+2
+f_im   = f(iz(2:end-3));  % i-1
+f_ic   = f(iz(3:end-2));  % i
+f_ip   = f(iz(4:end-1));  % i+1
+f_ipp  = f(iz(5:end));  % i+2
+
+f_jmm  = f(ix(1:end-4));  % i-2
+f_jm   = f(ix(2:end-3));  % i-1
+f_jc   = f(ix(3:end-2));  % i
+f_jp   = f(ix(4:end-1));  % i+1
+f_jpp  = f(ix(5:end));  % i+2
 
 % get interpolated field values on i+1/2, i-1/2 cell faces
 switch ADVN
@@ -209,43 +224,59 @@ switch ADVN
         % positive velocity
         f_ip_pos = f_ic;     % i+1/2
         f_im_pos = f_im;     % i-1/2
+        f_jp_pos = f_jc;
+        f_jm_pos = f_jm;
 
         % negative velocity
         f_ip_neg = f_ip;     % i+1/2
         f_im_neg = f_ic;     % i-1/2
+        f_jp_neg = f_jp;
+        f_jm_neg = f_jc;
 
     case 'CFD2'  % 2nd-order centred finite-difference scheme
         % positive velocity
         f_ip_pos = (f_ic+f_ip)./2;     % i+1/2
         f_im_pos = (f_ic+f_im)./2;     % i-1/2
+        f_jp_pos = (f_jc++f_jp)./2;
+        f_jm_pos = (f_jc+f_jm)./2;
 
         % negative velocity
         f_ip_neg = f_ip_pos;          % i+1/2
         f_im_neg = f_im_pos;          % i-1/2
+        f_jp_neg = f_jp_pos;         
+        f_jm_neg = f_jm_pos;          
 
     case 'UPW3'  % 3rd-order upwind scheme
         % positive velocity
         f_ip_pos = (2*f_ip + 5*f_ic - f_im )./6;     % i+1/2
-        f_im_pos = (2*f_ic + 5*f_im - f_imm)./6;     % i-1/2     
+        f_im_pos = (2*f_ic + 5*f_im - f_imm)./6;     % i-1/2   
+        f_jp_pos = (2*f_jp + 5*f_jc - f_jm)./6;
+        f_jm_pos = (2*f_jc + 5*f_jm - f_jmm)./6;
 
         % negative velocity
         f_ip_neg = (2*f_ic + 5*f_ip - f_ipp)./6;     % i+1/2
         f_im_neg = (2*f_im + 5*f_ic - f_ip )./6;     % i-1/2
+        f_jp_neg = (2*f_jc + 5*f_jp - f_jpp)./6;
+        f_jm_neg = (2*f_jm + 5*f_jc - f_jp )./6;
 end
 
 % calculate advection fluxes on i+1/2, i-1/2 cell faces
 
 % positive velocity
-q_ip_pos = u_pos.*f_ip_pos;
-q_im_pos = u_pos.*f_im_pos;
+qx_ip_pos = u_pos.*f_ip_pos;
+qx_im_pos = u_pos.*f_im_pos;
+qx_jp_pos = u_pos.*f_jp_pos;
+qx_jm_pos = u_pos.*f_jm_pos;
 
 % negative velocity
 q_ip_neg = u_neg.*f_ip_neg;
 q_im_neg = u_neg.*f_im_neg;
+q_jp_neg = u_neg.*f_jp_neg;
+q_jm_neg = u_neg.*f_jm_neg;
 
 % advection flux balance for rate of change
-div_q_pos = (q_ip_pos - q_im_pos)/dx;  % positive velocity
-div_q_neg = (q_ip_neg - q_im_neg)/dx;  % negative velocity
+div_q_pos = (q_ip_pos - q_im_pos)/h + (q_jp_pos - q_im_neg);  % positive velocity
+div_q_neg = (q_ip_neg - q_im_neg)/h + (q_jp_neg - q_jm_neg);  % negative velocity
 
 div_q     = div_q_pos + div_q_neg;     % combined
 dfdt      = - div_q;                   % advection rate
