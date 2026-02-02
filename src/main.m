@@ -18,14 +18,18 @@ switch BC
         % example periodic indexing for N=4
         % 3-point stencil |-- i-1 --|-- i --|-- i+1 --|
         % 5-point stencil |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
-        ix3 = [ Nx,1:Nx,1 ];
+        ix3 = [     Nx,1:Nx,1 ];
         ix5 = [Nx-1,Nx,1:Nx,1,2];
-        iz3 = [ Nz,1:Nz,1 ];
-    iz5 = [Nz-1,Nz,1:Nz,1,2];
+        iz3 = [     Nz,1:Nz,1 ];
+        iz5 = [Nz-1,Nz,1:Nz,1,2];
     case 'insulating'
         % example non-periodic indexing for N=4 
-        ind3 = [   1,1:N,N       ];  % 3-point stencil            |-- i-1 --|-- i --|-- i+1 --|
-        ind5 = [ 2,1,1:N,N,N-1   ];  % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
+        % 3-point stencil            |-- i-1 --|-- i --|-- i+1 --|
+        % 5-point stencil  |-- i-2 --|-- i-1 --|-- i --|-- i+1 --|-- i+2 --|
+        ix3 = [   1,1:Nx,Nx     ];
+        ix5 = [ 1,1,1:Nx,Nx,Nx  ];  
+        iz3 = [   1,1:Nz,Nz     ];
+        iz5 = [ 1,1,1:Nz,Nz,Nz  ];
 end
 
 % set initial coefficient fields
@@ -48,21 +52,24 @@ dt_dff = (h/2)^2/(max(kT(:)./rho(:)./cP(:))+eps);
 dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 
 % set initial condition for temperature at cell centres
-T   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t  ).^2./(4*sgm0^2)) ...
-         + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-         + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
-         + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t  ).^2./(4*sgm0^2)) ...
-         + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-         + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
-         + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t  ).^2./(4*sgm0^2)) ...
-         + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-         + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2));
+sgmt = sqrt(sgm0^2 + 2*k*t);
+T   = T0 + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
+          + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
+          + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt^2)) ...
+          + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
+          + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
+          + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt^2)) ...
+          + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
+          + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
+          + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt^2));
 Tin = T;                                         % store initial condition for plotting
 Ta  = T; 
 
 % initialise output figure with initial condition
 figure(1); clf
-makefig(xc,T,Tin,Ta,0);
+makefig(xc,zc,T,Tin,Ta,0);
+
+% calculate darcy flux components
 
 
 %*****  Solve Model Equations
@@ -73,23 +80,26 @@ while t <= tend
     t = t+dt;
     k = k+1;
 
+    % calculate T-dependent density
+    rho = rho0.*(1-a_T*(T-T0));
+
     % select time integration scheme
     switch TINT
         case 'FE1'  % 1st-order Forward Euler time integration scheme
             
             % get rate of change
-            dTdt = diffusion(T,k0,dx,ind3) ...
-                 + advection(T,u0,dx,ind5,ADVN) ...
-                 + Qr./(rho.*cP);
+            dTdt = advection(T,u,w,h,ix5,iz5,ADVN) ...
+                   + diffusion(T,KT,h,ix3,iz3)./(rho.*cP) ...
+                   + Qr./(rho.*cP);
 
         case 'RK2'  % 2nd-order Runge-Kutta time integration scheme
             
-            dTdt_half = diffusion(T               ,k0,dx,ind3) ...
-                      + advection(T               ,u0,dx,ind5,ADVN) ...
+            dTdt_half = diffusion(T               ,kT,h,ix3,iz3)./(rho.*cP) ...
+                      + advection(T               ,u,w,h,ix5,iz5,ADVN) ...
                       + Qr./(rho.*cP);
-            dTdt      = diffusion(T+dTdt_half*dt/2,k0,dx,ind3) ...
-                      + advection(T+dTdt_half*dt/2,u0,dx,ind5,ADVN) ...
-                      + Qr./(rho.*cP);
+            dTdt      = diffusion(T+dTdt_half*dt/2,kT,h,ix3,iz3)./(rho.*cP) ...
+                      + advection(T+dTdt_half*dt/2,u,w,h,ix5,iz5,ADVN);
+                      %+ Qr./(rho.*cP);
 
     end
 
@@ -98,15 +108,15 @@ while t <= tend
 
     % get analytical solution at time t
     sgmt = sqrt(sgm0^2 + 2*k*t);
-    Ta   = T0 + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-u0*t  ).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2-W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2-D-u0*t).^2./(4*sgm0^2)) ...
-              + dT*exp(-(xc-W/2+W-u0*t).^2./(4*sgm0^2)) * dT*exp(-(zc-D/2+D-u0*t).^2./(4*sgm0^2));
+    Ta   = T0 + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt0^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt0^2)) ...
+              + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt0^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt0^2)) ...
+              + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt0^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt0^2)) ...
+              + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt0^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt0^2)) ...
+              + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt0^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt0^2)) ...
+              + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt0^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt0^2)) ...
+              + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt0^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt0^2)) ...
+              + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt0^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt0^2)) ...
+              + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt0^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt0^2));
 
 
 
@@ -134,7 +144,7 @@ disp(' ');
 
 %*****  Function to make output figure
 
-function makefig(x,T,Ta,t)
+function makefig(x,z,T,Tin,Ta,t)
 
 subplot(2,1,1)
 imagesc(x,z,T); axis equal tight; colorbar
@@ -156,7 +166,7 @@ end
 
 %*****  Function to calculate diffusion rate
 
-function dfdt = diffusion(f,k,h,iz,ix)
+function dfdt = diffusion(f,k,h,ix,iz)
 
 % input arguments
 % f:    diffusing scalar field
@@ -172,11 +182,8 @@ kfz = (k(iz(1:end-1),:)+k(iz(2:end),:))/2;
 kfx = (k(:,ix(1:end-1))+k(:,ix(2:end)))/2;
 
 % calculate diffusive flux of scalar field f
-
 qz = - kfz .* diff(f(iz,:),1,1)/h;
 qx = - kfx .* diff(f(:,ix),1,2)/h;
-
-%q = - k * (diff(f(ind)))/dx;
 
 % calculate diffusion flux balance for rate of change
 dfdt = - diff(qz,1,1)/h ...
@@ -188,7 +195,7 @@ end
 
 %*****  Function to calculate advection rate
 
-function dfdt = advection(f,u,iz,ix,ADVN)
+function dfdt = advection(f,u,w,iz,ix,ADVN)
 
 % input arguments
 % f:    advected scalar field
@@ -203,20 +210,21 @@ function dfdt = advection(f,u,iz,ix,ADVN)
 % split the velocities into positive and negative
 u_pos = max(0,u);    % positive velocity (to the right)
 u_neg = min(0,u);    % negative velocity (to the left)
+w_pos = max(0,w);
+w_neg = min(0,w);
 
 % get values on stencil nodes
-%f_imm  = f(iz(1:end-4),:);  % i-2
-f_imm  = f(iz(1:end-4));  % i-2
-f_im   = f(iz(2:end-3));  % i-1
-f_ic   = f(iz(3:end-2));  % i
-f_ip   = f(iz(4:end-1));  % i+1
-f_ipp  = f(iz(5:end));  % i+2
+f_imm  = f(iz(1:end-4),:);  % i-2
+f_im   = f(iz(2:end-3),:);  % i-1
+f_ic   = f(iz(3:end-2),:);  % i
+f_ip   = f(iz(4:end-1),:);  % i+1
+f_ipp  = f(iz(5:end),:);  % i+2
 
-f_jmm  = f(ix(1:end-4));  % i-2
-f_jm   = f(ix(2:end-3));  % i-1
-f_jc   = f(ix(3:end-2));  % i
-f_jp   = f(ix(4:end-1));  % i+1
-f_jpp  = f(ix(5:end));  % i+2
+f_jmm  = f(:,ix(1:end-4));  % i-2
+f_jm   = f(:,ix(2:end-3));  % i-1
+f_jc   = f(:,ix(3:end-2));  % i
+f_jp   = f(:,ix(4:end-1));  % i+1
+f_jpp  = f(:,ix(5:end));  % i+2
 
 % get interpolated field values on i+1/2, i-1/2 cell faces
 switch ADVN
@@ -265,18 +273,18 @@ end
 % positive velocity
 qx_ip_pos = u_pos.*f_ip_pos;
 qx_im_pos = u_pos.*f_im_pos;
-qx_jp_pos = u_pos.*f_jp_pos;
-qx_jm_pos = u_pos.*f_jm_pos;
+qx_jp_pos = w_pos.*f_jp_pos;
+qx_jm_pos = w_pos.*f_jm_pos;
 
 % negative velocity
 q_ip_neg = u_neg.*f_ip_neg;
 q_im_neg = u_neg.*f_im_neg;
-q_jp_neg = u_neg.*f_jp_neg;
-q_jm_neg = u_neg.*f_jm_neg;
+q_jp_neg = w_neg.*f_jp_neg;
+q_jm_neg = w_neg.*f_jm_neg;
 
 % advection flux balance for rate of change
-div_q_pos = (q_ip_pos - q_im_pos)/h + (q_jp_pos - q_im_neg);  % positive velocity
-div_q_neg = (q_ip_neg - q_im_neg)/h + (q_jp_neg - q_jm_neg);  % negative velocity
+div_q_pos = (q_ip_pos - q_im_pos)/h + (q_jp_pos - q_jm_neg)/h;  % positive velocity
+div_q_neg = (q_ip_neg - q_im_neg)/h + (q_jp_neg - q_jm_neg)/h;  % negative velocity
 
 div_q     = div_q_pos + div_q_neg;     % combined
 dfdt      = - div_q;                   % advection rate
