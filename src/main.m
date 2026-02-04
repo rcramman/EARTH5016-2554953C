@@ -53,23 +53,21 @@ dt     = CFL * min(dt_adv,dt_dff); % time step [s]
 
 % set initial condition for temperature at cell centres
 sgmt = sqrt(sgm0^2 + 2*k*t);
-T   = T0 + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
-          + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
-          + dT .*exp(-(xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt^2)) ...
-          + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
-          + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
-          + dT .*exp(-(xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt^2)) ...
-          + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
-          + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
-          + dT .*exp(-(xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(zc-D/2+D-u0*t).^2./(4*sgmt^2));
+T   = T0 + dT .* exp(-(Xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(Zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
+         + dT .* exp(-(Xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(Zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
+         + dT .* exp(-(Xc-W/2-u0*t  ).^2./(4*sgmt^2)) .* exp(-(Zc-D/2+D-u0*t).^2./(4*sgmt^2)) ...
+         + dT .* exp(-(Xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(Zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
+         + dT .* exp(-(Xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(Zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
+         + dT .* exp(-(Xc-W/2-W-u0*t).^2./(4*sgmt^2)) .* exp(-(Zc-D/2+D-u0*t).^2./(4*sgmt^2)) ...
+         + dT .* exp(-(Xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(Zc-D/2-u0*t  ).^2./(4*sgmt^2)) ...
+         + dT .* exp(-(Xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(Zc-D/2-D-u0*t).^2./(4*sgmt^2)) ...
+         + dT .* exp(-(Xc-W/2+W-u0*t).^2./(4*sgmt^2)) .* exp(-(Zc-D/2+D-u0*t).^2./(4*sgmt^2));
 Tin = T;                                         % store initial condition for plotting
 Ta  = T; 
 
 % initialise output figure with initial condition
 figure(1); clf
-makefig(xc,zc,T,Tin,Ta,0);
-
-% calculate darcy flux components
+makefig(xc,zc,T,Ta,0); %Tin
 
 
 %*****  Solve Model Equations
@@ -81,7 +79,7 @@ while t <= tend
     k = k+1;
 
     % calculate T-dependent density
-    rho = rho0.*(1-a_T*(T-T0));
+    %rho = rho0.*(1-a_T*(T-T0));
 
     % select time integration scheme
     switch TINT
@@ -89,7 +87,7 @@ while t <= tend
             
             % get rate of change
             dTdt = advection(T,u,w,h,ix5,iz5,ADVN) ...
-                   + diffusion(T,KT,h,ix3,iz3)./(rho.*cP) ...
+                   + diffusion(T,kT,h,ix3,iz3)./(rho.*cP) ...
                    + Qr./(rho.*cP);
 
         case 'RK2'  % 2nd-order Runge-Kutta time integration scheme
@@ -144,7 +142,7 @@ disp(' ');
 
 %*****  Function to make output figure
 
-function makefig(x,z,T,Tin,Ta,t)
+function makefig(x,z,T,Ta,t) %Tin
 
 subplot(2,1,1)
 imagesc(x,z,T); axis equal tight; colorbar
@@ -195,7 +193,7 @@ end
 
 %*****  Function to calculate advection rate
 
-function dfdt = advection(f,u,w,iz,ix,ADVN)
+function dfdt = advection(f,h,u,w,iz,ix,ADVN)
 
 % input arguments
 % f:    advected scalar field
@@ -218,13 +216,13 @@ f_imm  = f(iz(1:end-4),:);  % i-2
 f_im   = f(iz(2:end-3),:);  % i-1
 f_ic   = f(iz(3:end-2),:);  % i
 f_ip   = f(iz(4:end-1),:);  % i+1
-f_ipp  = f(iz(5:end),:);  % i+2
+f_ipp  = f(iz(5:end  ),:);  % i+2
 
 f_jmm  = f(:,ix(1:end-4));  % i-2
 f_jm   = f(:,ix(2:end-3));  % i-1
 f_jc   = f(:,ix(3:end-2));  % i
 f_jp   = f(:,ix(4:end-1));  % i+1
-f_jpp  = f(:,ix(5:end));  % i+2
+f_jpp  = f(:,ix(5:end  ));  % i+2
 
 % get interpolated field values on i+1/2, i-1/2 cell faces
 switch ADVN
@@ -245,7 +243,7 @@ switch ADVN
         % positive velocity
         f_ip_pos = (f_ic+f_ip)./2;     % i+1/2
         f_im_pos = (f_ic+f_im)./2;     % i-1/2
-        f_jp_pos = (f_jc++f_jp)./2;
+        f_jp_pos = (f_jc+f_jp)./2;
         f_jm_pos = (f_jc+f_jm)./2;
 
         % negative velocity
@@ -258,14 +256,14 @@ switch ADVN
         % positive velocity
         f_ip_pos = (2*f_ip + 5*f_ic - f_im )./6;     % i+1/2
         f_im_pos = (2*f_ic + 5*f_im - f_imm)./6;     % i-1/2   
-        f_jp_pos = (2*f_jp + 5*f_jc - f_jm)./6;
-        f_jm_pos = (2*f_jc + 5*f_jm - f_jmm)./6;
+        f_jp_pos = (2*f_jp + 5*f_jc - f_jm )./6;     % i+1/2
+        f_jm_pos = (2*f_jc + 5*f_jm - f_jmm)./6;     % i-1/2
 
         % negative velocity
         f_ip_neg = (2*f_ic + 5*f_ip - f_ipp)./6;     % i+1/2
         f_im_neg = (2*f_im + 5*f_ic - f_ip )./6;     % i-1/2
-        f_jp_neg = (2*f_jc + 5*f_jp - f_jpp)./6;
-        f_jm_neg = (2*f_jm + 5*f_jc - f_jp )./6;
+        f_jp_neg = (2*f_jc + 5*f_jp - f_jpp)./6;     % i+1/2
+        f_jm_neg = (2*f_jm + 5*f_jc - f_jp )./6;     % i-1/2
 end
 
 % calculate advection fluxes on i+1/2, i-1/2 cell faces
@@ -283,10 +281,24 @@ q_jp_neg = w_neg.*f_jp_neg;
 q_jm_neg = w_neg.*f_jm_neg;
 
 % advection flux balance for rate of change
-div_q_pos = (q_ip_pos - q_im_pos)/h + (q_jp_pos - q_jm_neg)/h;  % positive velocity
+div_q_pos = (qx_ip_pos - qx_im_pos)/h + (qx_jp_pos - qx_jm_neg)/h;  % positive velocity
 div_q_neg = (q_ip_neg - q_im_neg)/h + (q_jp_neg - q_jm_neg)/h;  % negative velocity
 
 div_q     = div_q_pos + div_q_neg;     % combined
 dfdt      = - div_q;                   % advection rate
 
 end
+
+
+%*****  Function to calculate darcy flux
+
+%function [w,u] = darcyflux(k,h,rho,ix,iz,g)
+
+%qz = - k .* diff(f(),1,1)/h;
+%qx = - k .* diff(f(:,ix),1,2)/h;
+
+
+
+
+
+
