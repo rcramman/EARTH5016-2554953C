@@ -212,17 +212,17 @@ w_pos = max(0,w);
 w_neg = min(0,w);
 
 % get values on stencil nodes
-f_imm  = f(iz(1:end-4),:);  % i-2
-f_im   = f(iz(2:end-3),:);  % i-1
-f_ic   = f(iz(3:end-2),:);  % i
-f_ip   = f(iz(4:end-1),:);  % i+1
-f_ipp  = f(iz(5:end  ),:);  % i+2
+f_imm  = f(:,ix(1:end-4));  % i-2
+f_im   = f(:,ix(2:end-3));  % i-1
+f_ic   = f(:,ix(3:end-2));  % i
+f_ip   = f(:,ix(4:end-1));  % i+1
+f_ipp  = f(:,ix(5:end  ));  % i+2
 
-f_jmm  = f(:,ix(1:end-4));  % i-2
-f_jm   = f(:,ix(2:end-3));  % i-1
-f_jc   = f(:,ix(3:end-2));  % i
-f_jp   = f(:,ix(4:end-1));  % i+1
-f_jpp  = f(:,ix(5:end  ));  % i+2
+f_jmm  = f(iz(1:end-4),:);  % j-2
+f_jm   = f(iz(2:end-3),:);  % j-1
+f_jc   = f(iz(3:end-2),:);  % j
+f_jp   = f(iz(4:end-1),:);  % j+1
+f_jpp  = f(iz(5:end  ),:);  % j+2
 
 % get interpolated field values on i+1/2, i-1/2 cell faces
 switch ADVN
@@ -255,13 +255,15 @@ switch ADVN
     case 'UPW3'  % 3rd-order upwind scheme
         % positive velocity
         f_ip_pos = (2*f_ip + 5*f_ic - f_im )./6;     % i+1/2
-        f_im_pos = (2*f_ic + 5*f_im - f_imm)./6;     % i-1/2   
+        f_im_pos = (2*f_ic + 5*f_im - f_imm)./6;     % i-1/2
+
         f_jp_pos = (2*f_jp + 5*f_jc - f_jm )./6;     % i+1/2
         f_jm_pos = (2*f_jc + 5*f_jm - f_jmm)./6;     % i-1/2
 
         % negative velocity
         f_ip_neg = (2*f_ic + 5*f_ip - f_ipp)./6;     % i+1/2
         f_im_neg = (2*f_im + 5*f_ic - f_ip )./6;     % i-1/2
+        
         f_jp_neg = (2*f_jc + 5*f_jp - f_jpp)./6;     % i+1/2
         f_jm_neg = (2*f_jm + 5*f_jc - f_jp )./6;     % i-1/2
 end
@@ -269,16 +271,18 @@ end
 % calculate advection fluxes on i+1/2, i-1/2 cell faces
 
 % positive velocity
-qx_ip_pos = u_pos.*f_ip_pos;
-qx_im_pos = u_pos.*f_im_pos;
-qx_jp_pos = w_pos.*f_jp_pos;
-qx_jm_pos = w_pos.*f_jm_pos;
+q_ip_pos = u_pos(:,2:end).*f_ip_pos;
+q_im_pos = u_pos(:,1:end-1).*f_im_pos;
+
+q_jp_pos = w_pos(2:end,:).*f_jp_pos;
+q_jm_pos = w_pos(1:end-1,:).*f_jm_pos;
 
 % negative velocity
-q_ip_neg = u_neg.*f_ip_neg;
-q_im_neg = u_neg.*f_im_neg;
-q_jp_neg = w_neg.*f_jp_neg;
-q_jm_neg = w_neg.*f_jm_neg;
+q_ip_neg = u_neg(:,2:end).*f_ip_neg;
+q_im_neg = u_neg(:,1:end-1).*f_im_neg;
+
+q_jp_neg = w_neg(2:end,:).*f_jp_neg;
+q_jm_neg = w_neg(1:end-1,:).*f_jm_neg;
 
 % advection flux balance for rate of change
 div_q_pos = (qx_ip_pos - qx_im_pos)/h + (qx_jp_pos - qx_jm_neg)/h;  % positive velocity
